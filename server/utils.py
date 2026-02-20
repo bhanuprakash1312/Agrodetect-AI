@@ -6,7 +6,7 @@ import json
 
 from huggingface_hub import hf_hub_download
 
-REPO_ID = "iam-i-j-k/agriscan-model"
+REPO_ID = "bhanu-13/Agrodetect AI"
 
 def load_model():
     # Download files from Hugging Face

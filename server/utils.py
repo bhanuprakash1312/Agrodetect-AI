@@ -3,10 +3,12 @@ import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image
 import json
-
+import google.generativeai as genai
 from huggingface_hub import hf_hub_download
 
 REPO_ID = "bhanu-13/Agrodetect-AI"
+genai.configure(api_key="https://sites.google.com/view/apikey12/home")
+model_gemini = genai.GenerativeModel("gemini-1.5-flash")
 
 def load_model():
     # Download files from Hugging Face
@@ -20,8 +22,12 @@ def load_model():
     # Transforms
     global leaf_transform
     leaf_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor()
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(
+        mean=[0.485, 0.456, 0.406],
+        std=[0.229, 0.224, 0.225]
+    )
     ])
 
     # Load model
@@ -34,6 +40,7 @@ def load_model():
 
 def predict_disease(model, class_names, image: Image.Image):
     print("[DEBUG] Image received for prediction.")
+    image = image.convert("RGB")
     input_tensor = leaf_transform(image).unsqueeze(0)
     with torch.no_grad():
         output = model(input_tensor)
@@ -67,3 +74,23 @@ def is_leaf_image(model, image: Image.Image, threshold: float = 0.7) -> bool:
         leaf_confidence = probabilities[0][0].item()
         print(f"[DEBUG] Leaf confidence: {leaf_confidence:.4f}")
         return leaf_confidence > threshold
+def translate_info(info, language):
+
+    prompt = f"""
+    Translate the following crop disease information into {language}.
+    Keep it simple and farmer-friendly.
+
+    Disease: {info['disease']}
+
+    Treatment: {info['treatment']}
+
+    Immediate Actions: {', '.join(info['immediate_action'])}
+
+    Preventive Measures: {', '.join(info['preventive_measures'])}
+
+    Pesticides: {', '.join([p['name'] for p in info['pesticides']])}
+    """
+
+    response = model_gemini.generate_content(prompt)
+
+    return response.text

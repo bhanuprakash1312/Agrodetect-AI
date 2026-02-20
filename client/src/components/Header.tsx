@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ onShowHistory, onShowHelp }) => 
                 <Leaf className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900">AgriScan AI</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900">Agridetect AI</h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Professional Crop Analysis</p>
               </div>
             </div>

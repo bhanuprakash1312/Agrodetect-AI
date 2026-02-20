@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import io
 
-from backend.utils import (
+from utils import (
     load_model,
     load_leaf_classifier,
     is_leaf_image,

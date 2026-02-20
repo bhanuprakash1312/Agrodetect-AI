@@ -6,12 +6,12 @@ import json
 
 from huggingface_hub import hf_hub_download
 
-REPO_ID = "bhanu-13/Agrodetect AI"
+REPO_ID = "bhanu-13/Agrodetect-AI"
 
 def load_model():
     # Download files from Hugging Face
-    model_path = hf_hub_download(repo_id=REPO_ID, filename="model.pth", repo_type="model")
-    class_path = hf_hub_download(repo_id=REPO_ID, filename="class_names.json", repo_type="model")
+    model_path = hf_hub_download(repo_id=REPO_ID, filename="model.pth", repo_type="space")
+    class_path = hf_hub_download(repo_id=REPO_ID, filename="class_names.json", repo_type="space")
 
     # Load class labels
     with open(class_path) as f:
@@ -42,7 +42,7 @@ def predict_disease(model, class_names, image: Image.Image):
         return class_names[predicted.item()]
 
 def load_leaf_classifier():
-    model_path = hf_hub_download(repo_id=REPO_ID, filename="leaf_binary_classifier.pth", repo_type="model")
+    model_path = hf_hub_download(repo_id=REPO_ID, filename="leaf_binary_classifier.pth", repo_type="space")
 
     model = models.mobilenet_v2(pretrained=True)
     model.classifier[1] = nn.Linear(model.last_channel, 2)

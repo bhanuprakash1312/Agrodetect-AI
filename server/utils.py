@@ -6,9 +6,16 @@ import json
 import google.generativeai as genai
 from huggingface_hub import hf_hub_download
 import re
-
+import os
 REPO_ID = "bhanu-13/Agrodetect-AI"
-genai.configure(api_key="AIzaSyBWL00-84wRaC1QyaVJs42ee3jCY7KBfIE")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Safety check
+if not GEMINI_API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables")
+
+# Configure Gemini
+genai.configure(api_key=GEMINI_API_KEY)
 model_gemini = genai.GenerativeModel("gemini-flash-lite-latest")
 
 def load_model():

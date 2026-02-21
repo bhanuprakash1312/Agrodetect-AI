@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+torchvision
+pillow
+huggingface_hub
+google-generativeai
+python-dotenv
+python-multipart

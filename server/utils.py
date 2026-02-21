@@ -5,10 +5,11 @@ from PIL import Image
 import json
 import google.generativeai as genai
 from huggingface_hub import hf_hub_download
+import re
 
 REPO_ID = "bhanu-13/Agrodetect-AI"
-genai.configure(api_key="https://sites.google.com/view/apikey12/home")
-model_gemini = genai.GenerativeModel("gemini-1.5-flash")
+genai.configure(api_key="AIzaSyBWL00-84wRaC1QyaVJs42ee3jCY7KBfIE")
+model_gemini = genai.GenerativeModel("gemini-flash-lite-latest")
 
 def load_model():
     # Download files from Hugging Face
@@ -64,33 +65,122 @@ def get_treatment(disease):
     with open(treatment_path) as f:
         treatment_dict = json.load(f)
     return treatment_dict.get(disease, "No treatment recommendation available.")
+def is_leaf_image(model, image: Image.Image, threshold: float = 0.6) -> bool:
 
-def is_leaf_image(model, image: Image.Image, threshold: float = 0.7) -> bool:
+    # FIX 1: Always convert to RGB
+    image = image.convert("RGB")
+
+    # FIX 2: Apply transform correctly
     input_tensor = leaf_transform(image).unsqueeze(0)
+
     with torch.no_grad():
+
         output = model(input_tensor)
+
         probabilities = torch.softmax(output, dim=1)
+
+        # DEBUG: see probabilities
         print("[DEBUG] Probabilities:", probabilities)
+
+        # FIX 3: leaf class index = 0 (assuming training order)
         leaf_confidence = probabilities[0][0].item()
+
         print(f"[DEBUG] Leaf confidence: {leaf_confidence:.4f}")
-        return leaf_confidence > threshold
-def translate_info(info, language):
+
+        # FIX 4: lower threshold slightly for better detection
+        return leaf_confidence >= threshold
+def translate_disease_info(prediction: str, treatment: str, language: str):
+
+    # Skip if English
+    if language.lower() == "english":
+        return prediction, treatment
 
     prompt = f"""
-    Translate the following crop disease information into {language}.
-    Keep it simple and farmer-friendly.
+Translate into {language}.
 
-    Disease: {info['disease']}
+Return EXACTLY this format:
 
-    Treatment: {info['treatment']}
+Disease: <translated disease>
+Treatment: <translated treatment>
 
-    Immediate Actions: {', '.join(info['immediate_action'])}
+Disease: {prediction}
+Treatment: {treatment}
+"""
 
-    Preventive Measures: {', '.join(info['preventive_measures'])}
+    try:
 
-    Pesticides: {', '.join([p['name'] for p in info['pesticides']])}
+        response = model_gemini.generate_content(prompt)
+
+        text = response.text.strip()
+
+        print("[DEBUG Gemini translation]:", text)
+
+        # Remove markdown if present
+        text = re.sub(r"```.*?```", "", text, flags=re.DOTALL)
+
+        # Split safely
+        disease_part = prediction
+        treatment_part = treatment
+
+        if "Disease:" in text:
+            disease_part = text.split("Disease:")[1].split("Treatment:")[0].strip()
+
+        if "Treatment:" in text:
+            treatment_part = text.split("Treatment:")[1].strip()
+
+        return disease_part, treatment_part
+
+    except Exception as e:
+
+        print("[ERROR Gemini translation]:", e)
+
+        return prediction, treatment
+# utils.py
+
+
+def generate_actions_and_prevention(disease: str, language: str):
+
+    prompt = f"""
+    Provide crop disease management for: {disease}
+
+    Return ONLY valid JSON. No extra text.
+
+    Format:
+    {{
+      "actions": [
+        "action 1",
+        "action 2",
+        "action 3"
+      ],
+      "prevention": [
+        "prevention 1",
+        "prevention 2",
+        "prevention 3"
+      ]
+    }}
+
+    Rules:
+    - Language: {language}
+    - Simple farmer-friendly language
+    - Max 8 words per point
+    - Exactly 3 actions and 3 prevention
     """
 
-    response = model_gemini.generate_content(prompt)
+    try:
 
-    return response.text
+        response = model_gemini.generate_content(prompt)
+
+        text = response.text.strip()
+
+        # remove markdown if exists
+        text = text.replace("```json", "").replace("```", "")
+
+        data = json.loads(text)
+
+        return data["actions"], data["prevention"]
+
+    except Exception as e:
+
+        print("[ERROR] Gemini actions generation failed:", e)
+
+        return [], []

@@ -14,7 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
-
+import { useState } from "react"
+import { translateDisease, getActionsAndPrevention } from "../utils/api"
 interface PredictionResultsProps {
   prediction: string
   treatment: string
@@ -22,6 +23,14 @@ interface PredictionResultsProps {
 }
 
 export const PredictionResults: React.FC<PredictionResultsProps> = ({ prediction, treatment, analysisTime = "0" }) => {
+  const [selectedLanguage, setSelectedLanguage] = useState("Telugu")
+  const [translatedText, setTranslatedText] = useState("")
+  const [showTranslateButton, setShowTranslateButton] = useState(false)
+  const [isTranslating, setIsTranslating] = useState(false)
+  const [translatedPrediction, setTranslatedPrediction] = useState("")
+  const [translatedTreatment, setTranslatedTreatment] = useState("")
+  const [actions, setActions] = useState<string[]>([])
+  const [prevention, setPrevention] = useState<string[]>([])
   // Format the prediction to be more readable
   const formatPrediction = (pred: string) => {
     return pred.replace(/___/g, " - ").replace(/_/g, " ")
@@ -99,6 +108,10 @@ export const PredictionResults: React.FC<PredictionResultsProps> = ({ prediction
     }
   }
 
+  //transaltion of treatment protocol and disease
+
+
+
   const severity = getDiseaseSeverity(prediction)
   const SeverityIcon = severity.icon
 
@@ -134,6 +147,27 @@ export const PredictionResults: React.FC<PredictionResultsProps> = ({ prediction
         )
     }
   }
+
+  // Translation function (ADD THIS)
+const handleTranslate = async () => {
+
+  const translated = await translateDisease(
+    prediction,
+    treatment,
+    selectedLanguage
+  );
+
+  setTranslatedPrediction(translated.prediction);
+  setTranslatedTreatment(translated.treatment);
+
+  const actionData = await getActionsAndPrevention(
+    prediction,
+    selectedLanguage
+  );
+
+  setActions(actionData.actions);
+  setPrevention(actionData.prevention);
+};
 
 return (
     <div className="space-y-6 sm:space-y-8">
@@ -189,8 +223,32 @@ return (
             </div>
 
             <h5 className={`text-2xl sm:text-3xl font-bold ${severity.color} mb-3 sm:mb-4 leading-tight`}>
-              {prediction ? formatPrediction(prediction) : "No prediction available"}
+              {translatedPrediction || (prediction ? formatPrediction(prediction) : "No prediction available")}
             </h5>
+            {prediction && (
+  <div className="flex items-center gap-2 mb-3">
+
+    <select
+      value={selectedLanguage}
+      onChange={(e) => setSelectedLanguage(e.target.value)}
+      className="border rounded px-2 py-1 text-sm"
+    >
+      <option value="Telugu">Telugu</option>
+      <option value="Hindi">Hindi</option>
+      <option value="Tamil">Tamil</option>
+      <option value="Kannada">Kannada</option>
+      <option value="Malayalam">Malayalam</option>
+    </select>
+
+    <button
+      onClick={handleTranslate}
+      className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+    >
+      {isTranslating ? "Translating..." : "Translate"}
+    </button>
+
+  </div>
+)}
 
             <div className="space-y-3 sm:space-y-4">
               {/* Confidence Meter */}
@@ -235,7 +293,7 @@ return (
             <div className="bg-white/80 backdrop-blur-sm rounded-lg sm:rounded-xl p-4 sm:p-6 border-2 border-blue-200 shadow-sm">
               <div className="prose prose-blue max-w-none">
                 <p className="text-gray-800 leading-relaxed text-base sm:text-lg font-medium">
-                  {treatment || "No treatment recommendations available"}
+                  {translatedTreatment || treatment}
                 </p>
               </div>
             </div>
@@ -274,22 +332,22 @@ return (
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-green-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-green-900 text-sm sm:text-base">Isolate affected plants</div>
-                <div className="text-xs sm:text-sm text-green-700">Prevent disease spread to healthy crops</div>
+                <div className="font-medium text-green-900 text-sm sm:text-base">{actions[0]||"Isolate affected plants"}</div>
+                {/* <div className="text-xs sm:text-sm text-green-700">Prevent disease spread to healthy crops</div> */}
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-green-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-green-900 text-sm sm:text-base">Apply recommended treatment</div>
-                <div className="text-xs sm:text-sm text-green-700">Follow dosage and timing instructions</div>
+                <div className="font-medium text-green-900 text-sm sm:text-base">{actions[1]||"Apply recommended treatment"}</div>
+                {/* <div className="text-xs sm:text-sm text-green-700">Follow dosage and timing instructions</div> */}
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-green-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-green-900 text-sm sm:text-base">Document progress</div>
-                <div className="text-xs sm:text-sm text-green-700">Take photos and track recovery</div>
+                <div className="font-medium text-green-900 text-sm sm:text-base">{actions[2]||"Document progress"}</div>
+                {/* <div className="text-xs sm:text-sm text-green-700">Take photos and track recovery</div> */}
               </div>
             </div>
           </div>
@@ -308,22 +366,22 @@ return (
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-purple-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-purple-900 text-sm sm:text-base">Optimize plant spacing</div>
-                <div className="text-xs sm:text-sm text-purple-700">Improve air circulation</div>
+                <div className="font-medium text-purple-900 text-sm sm:text-base">{prevention[0]||"Optimize plant spacing"}</div>
+                {/* <div className="text-xs sm:text-sm text-purple-700">Improve air circulation</div> */}
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-purple-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-purple-900 text-sm sm:text-base">Water management</div>
-                <div className="text-xs sm:text-sm text-purple-700">Avoid overhead watering</div>
+                <div className="font-medium text-purple-900 text-sm sm:text-base">{prevention[1]||"Water management"}</div>
+                {/* <div className="text-xs sm:text-sm text-purple-700">Avoid overhead watering</div> */}
               </div>
             </div>
             <div className="flex items-start gap-2 sm:gap-3 p-2 sm:p-3 bg-white/60 rounded-lg border border-purple-200">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mt-1.5 sm:mt-2 flex-shrink-0"></div>
               <div>
-                <div className="font-medium text-purple-900 text-sm sm:text-base">Regular monitoring</div>
-                <div className="text-xs sm:text-sm text-purple-700">Weekly health assessments</div>
+                <div className="font-medium text-purple-900 text-sm sm:text-base">{prevention[2]||"Regular monitoring"}</div>
+                {/* <div className="text-xs sm:text-sm text-purple-700">Weekly health assessments</div> */}
               </div>
             </div>
           </div>

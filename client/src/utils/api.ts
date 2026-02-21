@@ -1,12 +1,25 @@
 // const API_BASE_URL = 'https://agriscan-3b2j.onrender.com'; 
-const API_BASE_URL = 'http://127.0.0.1:8000'; //Update with your actual API base URL
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 export interface PredictionResponse {
   prediction: string;
   treatment: string;
 }
 
+export interface TranslationResponse {
+  prediction: string;
+  treatment: string;
+}
+
+export interface ActionsResponse {
+  actions: string[];
+  prevention: string[];
+}
+
+
+// Existing leaf verification (UNCHANGED)
 export const verifyLeaf = async (imageFile: File): Promise<boolean> => {
+
   const formData = new FormData();
   formData.append('file', imageFile);
 
@@ -25,30 +38,87 @@ export const verifyLeaf = async (imageFile: File): Promise<boolean> => {
 };
 
 
-export const predictDisease = async (imageFile: File): Promise<PredictionResponse | { detail: string }> => {
+// Existing prediction (UNCHANGED)
+export const predictDisease = async (
+  imageFile: File
+): Promise<PredictionResponse | { detail: string }> => {
+
   const formData = new FormData();
   formData.append('file', imageFile);
-
 
   const response = await fetch(`${API_BASE_URL}/predict`, {
     method: 'POST',
     body: formData,
   });
 
-
-  // Always parse response as JSON (even for errors)
   const result = await response.json();
 
-  // Handle non-leaf rejection from backend
   if (!response.ok) {
-    return result; // May contain: { detail: "Uploaded image is not a leaf." }
+    return result;
   }
 
-  // Return disease prediction
   const mappedResult: PredictionResponse = {
     prediction: result.disease || result.prediction || 'Unknown disease',
     treatment: result.treatment || 'No treatment available',
   };
 
   return mappedResult;
+};
+
+
+//////////////////////////////////////////////////////
+// NEW: Translation function
+//////////////////////////////////////////////////////
+
+export const translateDisease = async (
+  prediction: string,
+  treatment: string,
+  language: string
+): Promise<TranslationResponse> => {
+
+  const formData = new FormData();
+
+  formData.append("prediction", prediction);
+  formData.append("treatment", treatment);
+  formData.append("language", language);
+
+  const response = await fetch(`${API_BASE_URL}/translate`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await response.json();
+
+  return {
+    prediction: result.prediction,
+    treatment: result.treatment,
+  };
+};
+
+
+//////////////////////////////////////////////////////
+// NEW: Get Gemini actions and prevention
+//////////////////////////////////////////////////////
+
+export const getActionsAndPrevention = async (
+  disease: string,
+  language: string
+): Promise<ActionsResponse> => {
+
+  const formData = new FormData();
+
+  formData.append("disease", disease);
+  formData.append("language", language);
+
+  const response = await fetch(`${API_BASE_URL}/generate-actions`, {
+    method: "POST",
+    body: formData,
+  });
+
+  const result = await response.json();
+
+  return {
+    actions: result.actions || [],
+    prevention: result.prevention || [],
+  };
 };

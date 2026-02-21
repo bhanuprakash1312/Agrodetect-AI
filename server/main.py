@@ -1,14 +1,17 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import io
+
 
 from utils import (
     load_model,
     load_leaf_classifier,
     is_leaf_image,
     predict_disease,
-    get_treatment
+    get_treatment,
+    translate_disease_info,
+    generate_actions_and_prevention
 )
 
 app = FastAPI()
@@ -53,8 +56,38 @@ async def predict(file: UploadFile = File(...)):
         "prediction": disease,
         "treatment": treatment
     }
+@app.post("/translate")
+async def translate(
+    prediction: str = Form(...),
+    treatment: str = Form(...),
+    language: str = Form(...)
+):
 
+    translated_prediction, translated_treatment = translate_disease_info(
+        prediction,
+        treatment,
+        language
+    )
 
+    return {
+        "prediction": translated_prediction,
+        "treatment": translated_treatment
+    }
+@app.post("/generate-actions")
+async def generate_actions(
+    disease: str = Form(...),
+    language: str = Form(...)
+):
+
+    actions, prevention = generate_actions_and_prevention(
+        disease,
+        language
+    )
+
+    return {
+        "actions": actions,
+        "prevention": prevention
+    }
 @app.get("/ping")
 def ping():
     return {"status": "alive"}

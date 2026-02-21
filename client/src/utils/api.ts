@@ -1,5 +1,5 @@
 // const API_BASE_URL = 'https://agriscan-3b2j.onrender.com'; 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = 'https://agrodetect-ai-production.up.railway.app';
 
 export interface PredictionResponse {
   prediction: string;

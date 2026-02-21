@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { useState } from "react"
-import { translateDisease, getActionsAndPrevention } from "../utils/api"
+import { translateDisease, getActionsAndPrevention, translateHeadings } from "../utils/api"
 interface PredictionResultsProps {
   prediction: string
   treatment: string
@@ -31,6 +31,12 @@ export const PredictionResults: React.FC<PredictionResultsProps> = ({ prediction
   const [translatedTreatment, setTranslatedTreatment] = useState("")
   const [actions, setActions] = useState<string[]>([])
   const [prevention, setPrevention] = useState<string[]>([])
+  const [headings, setHeadings] = useState({
+  disease_detection: "Disease Detection",
+  treatment_protocol: "Treatment Protocol",
+  immediate_actions: "Immediate Actions",
+  prevention_strategy: "Prevention Strategy"
+});
   // Format the prediction to be more readable
   const formatPrediction = (pred: string) => {
     return pred.replace(/___/g, " - ").replace(/_/g, " ")
@@ -230,7 +236,17 @@ return (
 
     <select
       value={selectedLanguage}
-      onChange={(e) => setSelectedLanguage(e.target.value)}
+       onChange={async (e) => {
+
+      const language = e.target.value;
+
+      setSelectedLanguage(language);
+
+      const translated = await translateHeadings(language);
+
+      setHeadings(translated);
+
+  }}
       className="border rounded px-2 py-1 text-sm"
     >
       <option value="Telugu">Telugu</option>
@@ -286,7 +302,9 @@ return (
 
           <div className="flex-1 w-full">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <h4 className="text-xl sm:text-2xl font-bold text-gray-900">Treatment Protocol</h4>
+              <h4 className="text-xl sm:text-2xl font-bold text-gray-900">Treatment Protocol
+                
+              </h4>
               <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-500" />
             </div>
 

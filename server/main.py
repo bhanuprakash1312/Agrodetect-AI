@@ -11,7 +11,8 @@ from utils import (
     predict_disease,
     get_treatment,
     translate_disease_info,
-    generate_actions_and_prevention
+    generate_actions_and_prevention,
+    translate_headings
 )
 
 app = FastAPI()
@@ -88,6 +89,14 @@ async def generate_actions(
         "actions": actions,
         "prevention": prevention
     }
+@app.post("/translate-headings")
+async def translate_headings_endpoint(
+    language: str = Form(...)
+):
+
+    headings = translate_headings(language)
+
+    return headings
 @app.get("/ping")
 def ping():
     return {"status": "alive"}

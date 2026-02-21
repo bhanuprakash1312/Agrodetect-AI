@@ -1,5 +1,6 @@
 // const API_BASE_URL = 'https://agriscan-3b2j.onrender.com'; 
-const API_BASE_URL = 'https://agrodetect-ai-production.up.railway.app';
+// const API_BASE_URL = 'https://agrodetect-ai-production.up.railway.app';
+const API_BASE_URL = 'http://localhost:8000'; // For local development
 
 export interface PredictionResponse {
   prediction: string;
@@ -121,4 +122,19 @@ export const getActionsAndPrevention = async (
     actions: result.actions || [],
     prevention: result.prevention || [],
   };
+};
+export const translateHeadings = async (language: string) => {
+
+  const formData = new FormData();
+  formData.append("language", language);
+
+  const response = await fetch(
+    `${API_BASE_URL}/translate-headings`,
+    {
+      method: "POST",
+      body: formData
+    }
+  );
+
+  return await response.json();
 };

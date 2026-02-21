@@ -8,14 +8,14 @@ from huggingface_hub import hf_hub_download
 import re
 import os
 REPO_ID = "bhanu-13/Agrodetect-AI"
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # Safety check
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY not found in environment variables")
+# if not GEMINI_API_KEY:
+#     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
 # Configure Gemini
-genai.configure(api_key=GEMINI_API_KEY)
+genai.configure(api_key='AIzaSyCvZRB0zu1IhGrWU9oDAJhD823mFLdS5jY')
 model_gemini = genai.GenerativeModel("gemini-flash-lite-latest")
 
 def load_model():
@@ -191,3 +191,58 @@ def generate_actions_and_prevention(disease: str, language: str):
         print("[ERROR] Gemini actions generation failed:", e)
 
         return [], []
+def translate_headings(language: str):
+
+    headings = [
+        "Disease Detection",
+        "Treatment Protocol",
+        "Immediate Actions",
+        "Prevention Strategy"
+    ]
+
+    if language.lower() == "english":
+        return {
+            "disease_detection": "Disease Detection",
+            "treatment_protocol": "Treatment Protocol",
+            "immediate_actions": "Immediate Actions",
+            "prevention_strategy": "Prevention Strategy"
+        }
+
+    prompt = f"""
+Translate the following headings into {language}.
+Return ONLY JSON.
+
+{{
+"disease_detection": "...",
+"treatment_protocol": "...",
+"immediate_actions": "...",
+"prevention_strategy": "..."
+}}
+
+Headings:
+Disease Detection
+Treatment Protocol
+Immediate Actions
+Prevention Strategy
+"""
+
+    try:
+
+        response = model_gemini.generate_content(prompt)
+
+        import json, re
+
+        text = re.sub(r"```json|```", "", response.text)
+
+        return json.loads(text)
+
+    except Exception as e:
+
+        print("Heading translation error:", e)
+
+        return {
+            "disease_detection": "Disease Detection",
+            "treatment_protocol": "Treatment Protocol",
+            "immediate_actions": "Immediate Actions",
+            "prevention_strategy": "Prevention Strategy"
+        }

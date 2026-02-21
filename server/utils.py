@@ -15,7 +15,7 @@ REPO_ID = "bhanu-13/Agrodetect-AI"
 #     raise ValueError("GEMINI_API_KEY not found in environment variables")
 
 # Configure Gemini
-genai.configure(api_key='AIzaSyCvZRB0zu1IhGrWU9oDAJhD823mFLdS5jY')
+genai.configure(api_key='AIzaSyBdzfWPoGTkami5MjkC9cnSh1fiC7Dv4Tc')
 model_gemini = genai.GenerativeModel("gemini-flash-lite-latest")
 
 def load_model():
@@ -72,7 +72,7 @@ def get_treatment(disease):
     with open(treatment_path) as f:
         treatment_dict = json.load(f)
     return treatment_dict.get(disease, "No treatment recommendation available.")
-def is_leaf_image(model, image: Image.Image, threshold: float = 0.6) -> bool:
+def is_leaf_image(model, image: Image.Image, threshold: float = 0.5) -> bool:
 
     # FIX 1: Always convert to RGB
     image = image.convert("RGB")
